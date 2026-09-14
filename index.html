@@ -236,6 +236,31 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', -ap
 </head>
 <body>
 
+
+<!-- 온보딩 -->
+<div class="lock-screen" id="onboarding" style="gap:16px;padding:36px 28px">
+  <div style="font-size:52px">📓</div>
+  <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;text-align:center">한줄먼저</div>
+  <div style="font-size:14px;color:var(--muted);text-align:center;line-height:1.8">보기 전에 한 줄 먼저.<br>오늘 하루를 기록해요.</div>
+  <div style="width:100%;background:var(--surface);border-radius:16px;padding:20px;border:1px solid var(--border);margin-top:8px">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600">나는 어떤 사람인가요?</div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span style="font-size:15px;color:var(--text);white-space:nowrap">나는</span>
+      <input id="onboarding-input" type="text" maxlength="20" placeholder="매일 조금씩 성장하는"
+        style="flex:1;min-width:120px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:14px;font-family:'Pretendard',sans-serif;outline:none;">
+      <span style="font-size:15px;color:var(--text);white-space:nowrap">사람이에요</span>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap" id="identity-examples">
+      <button onclick="setIdentity('매일 조금씩 성장하는')" style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);font-family:'Pretendard',sans-serif;cursor:pointer">매일 조금씩 성장하는</button>
+      <button onclick="setIdentity('소소한 것에서 행복을 찾는')" style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);font-family:'Pretendard',sans-serif;cursor:pointer">소소한 것에서 행복을 찾는</button>
+      <button onclick="setIdentity('오늘도 살아내는')" style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);font-family:'Pretendard',sans-serif;cursor:pointer">오늘도 살아내는</button>
+      <button onclick="setIdentity('바쁘지만 나를 잊지 않는')" style="background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);font-family:'Pretendard',sans-serif;cursor:pointer">바쁘지만 나를 잊지 않는</button>
+    </div>
+  </div>
+  <button onclick="finishOnboarding()" style="width:100%;background:var(--accent);color:#0f0f13;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;font-family:'Pretendard',sans-serif;cursor:pointer;margin-top:4px">시작할게요 →</button>
+  <div style="font-size:11px;color:var(--muted)">나중에 설정에서 바꿀 수 있어요</div>
+</div>
+
 <!-- 잠금화면 -->
 <div class="lock-screen hidden" id="lock-screen">
   <div class="lock-logo">📓</div>
@@ -301,6 +326,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', -ap
 <div id="page-write" class="page active">
 
   <!-- 타임캡슐 -->
+  <div id="identity-bar" style="display:none;font-size:13px;color:var(--muted);font-weight:600;padding:4px 2px 14px;"></div>
   <div id="timecapsule-wrap"></div>
 
   <!-- 오늘의 질문 -->
@@ -404,6 +430,10 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', -ap
         <div><div class="settings-label">🌙 화면 모드</div><div class="settings-sub" id="theme-status-text">자동 (시스템 설정 따름)</div></div>
         <div class="settings-arrow">›</div>
       </div>
+      <div class="settings-item" onclick="editIdentity()">
+        <div><div class="settings-label">🙋 나는 어떤 사람?</div><div class="settings-sub" id="identity-setting-text">탭해서 수정</div></div>
+        <div class="settings-arrow">›</div>
+      </div>
       <div class="settings-item" onclick="openPinModal()">
         <div><div class="settings-label">🔒 비밀번호</div><div class="settings-sub" id="pin-status-text">설정 안 됨</div></div>
         <div class="settings-arrow">›</div>
@@ -463,6 +493,37 @@ const QUESTIONS = [
 function load() { try { records=JSON.parse(localStorage.getItem('hanjul_v2')||'[]'); } catch(e){records=[];} }
 function save() { try { localStorage.setItem('hanjul_v2',JSON.stringify(records)); } catch(e){} }
 function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+
+// ── 온보딩 ──
+function checkOnboarding() {
+  const done = localStorage.getItem('hanjul_onboarded');
+  if(!done) {
+    document.getElementById('onboarding').classList.remove('hidden');
+  } else {
+    document.getElementById('onboarding').classList.add('hidden');
+    checkLock();
+  }
+}
+function setIdentity(val) {
+  document.getElementById('onboarding-input').value = val;
+}
+function finishOnboarding() {
+  const val = document.getElementById('onboarding-input').value.trim();
+  if(val) localStorage.setItem('hanjul_identity', val);
+  localStorage.setItem('hanjul_onboarded', 'true');
+  document.getElementById('onboarding').classList.add('hidden');
+  checkLock();
+  renderIdentity();
+}
+function renderIdentity() {
+  const identity = localStorage.getItem('hanjul_identity');
+  const el = document.getElementById('identity-bar');
+  if(el && identity) {
+    el.textContent = `나는 ${identity} 사람이에요`;
+    el.style.display = 'block';
+  }
+}
 
 // ── 잠금 ──
 function checkLock() {
@@ -541,11 +602,15 @@ function renderQuestion() {
   const idx = new Date().getDate() % QUESTIONS.length;
   document.getElementById('q-text').textContent = QUESTIONS[idx];
 }
+let currentQuestion = '';
 function useQuestion() {
   const q = document.getElementById('q-text').textContent;
+  currentQuestion = q;
   document.getElementById('write-text').value = '';
   document.getElementById('write-text').placeholder = q;
   document.getElementById('write-text').focus();
+  // 질문 카드에 선택됨 표시
+  document.getElementById('question-card').style.borderColor = 'var(--accent)';
   showToast('질문을 참고해서 써봐요 ✏️');
 }
 
@@ -567,11 +632,13 @@ function saveRecord(){
   if(!text&&!selectedMood){showToast('기분이라도 남겨봐요 😊');return;}
   const rec={id:Date.now(),text:text||'',cat:selectedCat,date:new Date().toISOString(),dateStr:toDateStr(new Date())};
   if(selectedMood)rec.mood=selectedMood;
+  if(currentQuestion)rec.question=currentQuestion;
   if(selectedCat==='돈'){const amt=parseInt(document.getElementById('amount-val').value);const type=document.getElementById('amount-type').value;if(amt)rec.amount={value:amt,type};}
   if(currentPhoto)rec.photo=currentPhoto;
   records.unshift(rec);save();
   document.getElementById('write-text').value='';document.getElementById('char-count').textContent='0';document.getElementById('amount-val').value='';removePhoto();
   document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));selectedMood='';
+  currentQuestion='';document.getElementById('question-card').style.borderColor='';
   render();showToast(getReaction());
 }
 
@@ -630,6 +697,7 @@ function renderFeed(){
           <button class="feed-delete" onclick="deleteRecord(${r.id})">×</button>
         </div>
       </div>
+      ${r.question?`<div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600">💬 ${r.question}</div>`:''}
       ${r.text?`<div class="feed-text">${r.text}</div>`:''}
       ${amt}${photo}
     </div>`;
@@ -679,6 +747,7 @@ function renderCalendar(){
             <span class="feed-cat" style="color:${cc[r.cat]};background:${cc[r.cat]}22">${r.cat}</span>
           </div>
         </div>
+        ${r.question?`<div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600">💬 ${r.question}</div>`:''}
         ${r.text?`<div class="feed-text">${r.text}</div>`:''}
         ${r.amount?`<div class="feed-amount" style="color:${r.amount.type==='수입'?'var(--cat-몸)':'var(--cat-돈)'}">${r.amount.type==='수입'?'+':'-'}${r.amount.value.toLocaleString()}원</div>`:''}
         ${r.photo?`<div class="feed-photo"><img src="${r.photo}" alt=""></div>`:''}</div>`).join('')
@@ -689,6 +758,23 @@ function renderCalendar(){
 function selectCalDate(ds){selectedDate=selectedDate===ds?null:ds;renderCalendar();}
 function changeMonth(dir){calMonth+=dir;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}selectedDate=null;renderCalendar();}
 
+
+
+function editIdentity() {
+  const cur = localStorage.getItem('hanjul_identity') || '';
+  const val = prompt('나는 ___ 사람이에요', cur);
+  if(val !== null) {
+    localStorage.setItem('hanjul_identity', val.trim());
+    renderIdentity();
+    updateIdentitySettingText();
+    showToast('변경됐어요 ✅');
+  }
+}
+function updateIdentitySettingText() {
+  const el = document.getElementById('identity-setting-text');
+  const identity = localStorage.getItem('hanjul_identity');
+  if(el) el.textContent = identity ? `나는 ${identity} 사람이에요` : '탭해서 설정';
+}
 
 // ── 테마 ──
 function loadTheme() {
@@ -718,10 +804,12 @@ function updateThemeStatus(t) {
 // ── 시작 ──
 loadTheme();
 load();
-checkLock();
+checkOnboarding();
 loadAlarm();
 updatePinStatus();
 renderQuestion();
+renderIdentity();
+updateIdentitySettingText();
 render();
 </script>
 </body>
